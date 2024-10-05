@@ -1,81 +1,48 @@
 import { test } from "./01hello/hello.js";
 import { add, sub } from "./01hello/math.js";
 import express from "express";
-import users from "./data/user.json" assert { type: "json" };
+import userRouter from "./routes/user.route.js";
+import db from "./db/db.js";
+import dotenv from "dotenv";
 // import {functions} from "./01hello/file.js for using fs node functionality
 // express server
 const app = express();
 // Middleware
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: true }));
+
+app.use((req, res, next) => {
+  console.log("middleware 1 reached");
+  next();
+});
 
 // 1. console log test
 //  console.log(test);
+db().then(() => {
+  console.log("connection established");
+});
 
 // 2. math function  - - add, sub
 // console.log(add(5, 6));
 // console.log(sub);
 
-// 3. filesystem
+//  configure dotenv _______________
+dotenv.config({
+  path: ".env",
+});
 
-app.get("/", (req, res) => {
-  res.send("Hello World! from Home Page");
-});
-app.get("/about", (req, res) => {
-  res.send("Hello from About Page " + req.query.name);
-});
+const PORT = process.env.PORT || 8001;
 
 // Routes +++++++++++++++++++++
-
-// get all user data
-app.get("/api/users", (req, res) => {
-  const html = `
-  ${users
-    .map(
-      (user) => `<h5>${user.id} :  ${user.first_name} ${user.last_name}</h5>`
-    )
-    .join("")}
-    `;
-  return res.send(html);
-});
-
-// get user data from :id or update or delete
-
-app
-  .route("/api/users/:id")
-  .get((req, res) => {
-    const id = Number(req.params.id);
-    console.log(typeof id);
-    const user = users.find((user) => user.id === id);
-
-    return res.json(user);
-  })
-  .patch((req, res) => {
-    // todo : update user data
-    return res.json({ status: "pending" });
-  })
-  .delete((req, res) => {
-    // todo : delete user
-    return res.json({ status: "pending" });
-  });
-
-// create new user
-app.post("/api/users", (req, res) => {
-  // todo : create a new user
-  const body = req.body;
-  const newUser = {
-    id: users.length + 1,
-    first_name: body.first_name,
-    last_name: body.last_name,
-    email: body.email,
-    gender: body.gender,
-    job_title: body.job_title,
-  };
-  users.push(newUser);
-
-  return res.json({ status: "pending" });
-});
+app.use("/api/users", userRouter);
 
 // listen port ----------------
-app.listen(8000, () => {
-  console.log("Server is running on port 8000");
+app.listen(PORT, () => {
+  console.log(`server listening on ${PORT}`);
 });
+
+//todo status codes
+// 1. informational responses ( 100 - 199 )
+// 2. Sucessful responses (200 - 299 )
+// 3. Redirection messages(300 - 399)
+// 4. client error responses( 400 - 499 )
+// 5. Server error responses( 500 - 599 )
